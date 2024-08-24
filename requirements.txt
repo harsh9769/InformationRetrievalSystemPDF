@@ -1,0 +1,13 @@
+python-dotenv
+bitsandbytes
+transformers
+accelerate
+langchain
+langchain_community
+torch 
+torchvision
+nltk==3.9.1
+langchain_pinecone
+PyPDF2
+streamlit
+-e .
