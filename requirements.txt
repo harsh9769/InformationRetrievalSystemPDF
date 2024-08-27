@@ -1,13 +1,20 @@
 python-dotenv
+google-generativeai
 bitsandbytes
 transformers
 accelerate
 langchain
 langchain_community
+langchain-community
 torch 
 torchvision
 nltk==3.9.1
 langchain_pinecone
 PyPDF2
+datasets 
+loralib 
+sentencepiece
+pypdf
+sentence_transformers
 streamlit
 -e .
