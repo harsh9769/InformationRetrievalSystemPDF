@@ -1,25 +1,26 @@
 import os
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import GooglePalmEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
-from langchain_google_genai import GoogleGenerativeAI
+#from langchain_google_genai import GoogleGenerativeAI
+from langchain_mistralai import ChatMistralAI
+from langchain_mistralai import MistralAIEmbeddings
 
 from dotenv import load_dotenv
 
 
 load_dotenv()
 
-PineCone_API_KEY=os.getenv("Pinecone_API_KEY")
-os.environ["PineCone_API_KEY"]=PineCone_API_KEY
-
-PineCone_API_ENV=os.getenv("Pinecone_API_ENV")
-os.environ["PineCone_API_ENV"]=PineCone_API_ENV
+PINECONE_API_KEY=os.getenv("PINECONE_API_KEY")
+os.environ["PINECONE_API_KEY"]=PINECONE_API_KEY
 
 GOOGLE_API_KEY=os.getenv("GOOGLE_API_KEY")
 os.environ["GOOGLE_API_KEY"]=GOOGLE_API_KEY
+
+MISTRAL_API_KEY=os.getenv("MISTRAL_API_KEY")
+os.environ["MISTRAL_API_KEY"]=MISTRAL_API_KEY
 
 def get_pdf_text(pdf_docs):
     text=""
@@ -35,19 +36,30 @@ def get_text_chunks(text):
     return chunks
 
 def get_vectore_store(chunks):
-    embeddings=GooglePalmEmbeddings()
-    index_name="lama2web"
-    vectore_store=PineconeVectorStore(index_name=index_name,embedding=embeddings,pinecone_api_key=PineCone_API_KEY)
+    embeddings=MistralAIEmbeddings(model="mistral-embed",api_key=MISTRAL_API_KEY)
+    index_name="harsh12"
+    vectore_store=PineconeVectorStore(index_name=index_name,embedding=embeddings,pinecone_api_key=PINECONE_API_KEY)
     vectore_store.from_texts(chunks,embedding=embeddings,index_name=index_name)
     return vectore_store
 
 def conversational_chain(vector_store):
-    
-    llm = GoogleGenerativeAI(model="models/text-bison-001", google_api_key=GOOGLE_API_KEY, temperature=0.1)
+    llm = ChatMistralAI(model="mistral-large-latest",temperature=0,max_retries=2,api_key=MISTRAL_API_KEY)
+    #llm = GoogleGenerativeAI(model="models/text-bison-001", google_api_key=GOOGLE_API_KEY, temperature=0.1)
     memory = ConversationBufferMemory(
                 memory_key="chat_history",
                 input_key="question",
                 output_key='answer',
                 return_messages=True)
-    conversation_chain =ConversationalRetrievalChain.from_llm(llm=llm,retriever=vector_store.as_retriever(),memory=memory)
+
+    try:
+        conversation_chain = ConversationalRetrievalChain.from_llm(
+            llm=llm,
+            retriever=vector_store.as_retriever(),
+            memory=memory
+        )
+    except Exception as e:
+        print(f"Error setting up conversation chain: {str(e)}")
+        return None
+        
+    #conversation_chain =ConversationalRetrievalChain.from_llm(llm=llm,retriever=vector_store.as_retriever(),memory=memory)
     return conversation_chain
